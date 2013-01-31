@@ -1,0 +1,34 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; PRIMITIVE PROCEDURES
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (make-primitive-procedure implementation)
+  (list 'primitive implementation))
+(define (primitive-procedure? proc) (tagged-list? proc 'primitive))
+(define (primitive-implementation proc) (cadr proc))
+(define (primitive-procedures)
+  (list (list 'car car)
+        (list 'cdr cdr)
+        (list 'cons cons)
+        (list 'set-car! set-car!)
+        (list 'set-cdr! set-cdr!)
+        (list 'null? null?)
+        (list '+ +)
+        (list '- -)
+        (list '< <)
+        (list '> >)
+        (list '= =)
+        (list 'display display)
+        (list 'not not)
+        ; ... more primitives
+        ))
+
+(define (primitive-procedure-names) (map car (primitive-procedures)))
+
+(define (primitive-procedure-objects)
+  (map make-primitive-procedure (map cadr (primitive-procedures))))
+
+(define (apply-primitive-procedure proc args)
+  (apply (primitive-implementation proc) args))

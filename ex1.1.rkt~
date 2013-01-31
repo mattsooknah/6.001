@@ -1,0 +1,13 @@
+#lang racket
+
+(define (square x) (* x x))
+(define (sos x y) (+ (square x) (square y)))
+(define (f x) (sos (+ x 1) (* x 2)))
+
+(define (max2sos x y z)
+  (cond ((and (>= x z) (>= y z)) (sos x y))
+        ((and (>= x y) (>= z y)) (sos x z))
+        (else (sos y z))))
+
+(define (a-plus-abs-b a b)
+  ((if (> b 0) + -) a b))

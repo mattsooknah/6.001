@@ -1,0 +1,5 @@
+(load "generate.scm")
+
+(DFS 'http://sicp.csail.mit.edu/
+     (lambda (node) (eq? node 'cuttlefish))
+     the-web)

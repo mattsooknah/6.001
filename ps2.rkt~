@@ -1,0 +1,22 @@
+#lang racket
+
+(define fast-exp
+  (lambda (a b)
+    (if (= b 1) a
+    (if (even? b)
+        (fast-exp (* a a) (/ b 2))
+        (* a (fast-exp a (- b 1)))))))
+
+(define simple-log-it-helper
+  (lambda (n i)
+    (if (= n 1) 
+        i
+        (simple-log-helper (/ n 2) (+ i 1)))))
+
+(define simple-log-it
+  (lambda (n)
+    (simple-log-helper n 0)))
+
+(define simple-log
+  (lambda (n)
+    (if 

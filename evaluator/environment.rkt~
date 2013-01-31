@@ -1,0 +1,80 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; ENVIRONMENT MODEL
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Procedures ("double bubbles")
+(define (make-procedure parameters body env)
+  (list 'procedure parameters body env))
+(define (compound-procedure? proc)
+  (tagged-list? proc 'procedure))
+(define (procedure-parameters proc) (second proc))
+(define (procedure-body proc) (third proc))
+(define (procedure-environment proc) (fourth proc))
+
+
+;; Binding creation
+(define (make-binding var val)
+  (list var val))
+(define binding-variable car)
+(define binding-value cadr)
+(define (binding-search var frame)
+  (if (null? frame)
+      #f
+      (if (eq? var (first (first frame)))
+          (first frame)
+          (binding-search var (rest frame)))))       
+(define (set-binding-value! binding val)
+  (set-car! (cdr binding) val))
+
+;; Frames
+(define (make-frame variables values)
+  (cons 'frame (map make-binding variables values)))
+(define (frame-variables frame) (map binding-variable (cdr frame)))
+(define (frame-values frame) (map binding-value (cdr frame)))
+(define (add-binding-to-frame! var val frame)
+  (set-cdr! frame (cons (make-binding var val) (cdr frame))))
+(define (find-in-frame var frame)
+  (binding-search var (cdr frame)))
+
+;; Environments
+(define (enclosing-environment env) (cdr env))
+(define (first-frame env) (car env))
+(define the-empty-environment '())
+
+(define (find-in-environment var env)
+  (if (eq? env the-empty-environment)
+      #f
+      (let* ((frame (first-frame env))
+             (binding (find-in-frame var frame)))
+        (if binding
+            binding
+            (find-in-environment var (enclosing-environment env))))))
+
+(define (extend-environment vars vals base-env)
+  (if (= (length vars) (length vals))
+      (cons (make-frame vars vals) base-env)
+      (if (< (length vars) (length vals))
+          (error "Too many args supplied" vars vals)
+          (error "Too few args supplied" vars vals))))
+
+;; Binding lookup
+(define (lookup-variable-value var env)
+  (let ((binding (find-in-environment var env)))
+    (if binding
+        (binding-value binding)
+        (error "Unbound variable -- LOOKUP" var))))
+
+(define (set-variable-value! var val env)
+  (let ((binding (find-in-environment var env)))
+    (if binding
+        (set-binding-value! binding val)
+        (error "Unbound variable -- SET" var))))
+
+(define (define-variable! var val env)
+  (let* ((frame (first-frame env))
+         (binding (find-in-frame var frame)))
+    (if binding
+        (set-binding-value! binding val)
+        (add-binding-to-frame! var val frame))))

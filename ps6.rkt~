@@ -1,0 +1,4 @@
+(define last-cons
+  (lambda (l)
+    (if (null? (cdr l)) l
+        (last-cons (cdr l)))))

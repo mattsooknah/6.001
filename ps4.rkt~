@@ -1,0 +1,7 @@
+#lang racket
+
+(define nil empty)
+
+(define (make-increasing-list n start)
+  (if (= n 0) nil
+      (cons start (make-increasing-list (- n 1) (+ start 1)))))

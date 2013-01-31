@@ -1,0 +1,113 @@
+;;; 
+;;; Safe (As in -- where you put your valuables) Abstractions
+;;;
+
+(load "objsys.scm")
+
+;; named-object
+;;
+(define (create-named-object name)      ; symbol -> named-object
+  (create-instance make-named-object name))
+
+(define (make-named-object self name)
+  (let ((root-part (make-root-object self)))
+    (lambda (message)
+      (case message
+        ((TYPE) (lambda () (type-extend 'named-object root-part)))
+        ((NAME) (lambda () name))
+        (else (get-method message root-part))))))
+  
+;; container
+;;
+;; A container holds THINGS.  
+;; 
+;; This class is not meant for "stand-alone" objects; rather, 
+;; it is expected that other classes will inherit from the
+;; container class in order to be able to contain things. 
+;; For this reason, there is no create-container procedure.
+
+(define (make-container self)
+  (let ((root-part (make-root-object self))
+        (things nil)) ; a list of THING objects in container
+    (lambda (message)
+      (case message
+        ((TYPE) (lambda () (type-extend 'container root-part)))
+        ((THINGS) (lambda () things))
+        ((HAVE-THING?)
+         (lambda (thing)  ; container, thing -> boolean
+           (not (null? (memq thing things)))))
+        ((ADD-THING)
+         (lambda (new-thing)
+           (if (not (ask self 'HAVE-THING? new-thing))
+               (set! things (cons new-thing things)))
+           'DONE))
+        ((DEL-THING)
+         (lambda (thing)
+           (set! things (delq thing things))
+           'DONE))
+        (else (get-method message root-part))))))
+
+(define (delq item lst)
+  (cond ((null? lst) '())
+        ((eq? item (car lst)) (delq item (cdr lst)))
+        (else (cons (car lst) (delq item (cdr lst))))))
+
+;; safe
+;;
+;; symbol, number -> safe
+(define (create-safe name combo)
+  (create-instance make-safe name combo))
+
+(define (make-safe self name combo)
+  (let (;; Superclasses
+	(named-part (make-named-object self name))
+	(container-part (make-container self))
+	;; Additional local state
+	(locked? #t))          ; boolean
+    (lambda (message)
+      (case message
+        ((TYPE) (lambda ()
+		  (type-extend
+		   'safe named-part container-part)))
+	((LOCKED?) (lambda () locked?))
+	((LOCK) (lambda () (set! locked? #t)))
+	((UNLOCK) (lambda (purported-combo)
+		    (if (= purported-combo combo)
+			(begin (set! locked? #f)
+			       #t)
+			#f)))
+	((ADD-THING) ;; return #t if success, else #f
+	 (lambda (new-thing)
+	   (if (ask self 'LOCKED?)
+	       #f
+	       (begin
+		 (ask container-part 'ADD-THING new-thing)
+		 #t))))
+	((DEL-THING)  ;; return #t if success, else #f
+	 (lambda (old-thing)
+	   (if (or (ask self 'LOCKED?)
+		   (not (ask self 'HAVE-THING? old-thing)))
+	       #f
+	       (begin
+		 (ask container-part 'DEL-THING old-thing)
+		 #t))))
+	(else (get-method message named-part container-part))))))
+
+(define (create-limited-capacity-safe name combo capacity)
+  (create-instance make-limited-capacity-safe name combo capacity))
+
+(define (list-length lst) (vector-length (list->vector lst)))
+
+(define (make-limited-capacity-safe self name combo capacity)
+  (let ((safe (make-safe self name combo)))
+    (lambda (message)
+      (case message
+        ((TYPE) (lambda () (type-extend 'limited-capacity-safe safe)))
+        ((HOW-MANY-THINGS?) (lambda () (list-length (ask safe 'things))))
+        ((FULL?) (lambda () (= (ask self 'how-many-things?) capacity)))
+        ((ADD-THING) 
+         (lambda (new-thing)
+           (if (ask self 'full?) #f
+               (ask safe 'add-thing new-thing))))
+        (else (get-method message safe))))))
+    

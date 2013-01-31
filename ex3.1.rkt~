@@ -1,0 +1,6 @@
+(define (make-accumulator sum)
+  (lambda (new)
+    (if (number? new)
+        (begin (set! sum (+ sum new))
+               sum)
+        (error "NaN: " new))))
