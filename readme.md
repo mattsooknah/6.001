@@ -1,4 +1,4 @@
-A collection of worked examples, problem sets, and class projects (in various states of completion) from SICP and MIT 6.001. Uses the Racket dialect of Scheme. For reference, see:
+A collection of worked examples, problem sets, and class projects (in various states of completion) from SICP and MIT 6.001. Uses both Racket and PLT Scheme. For reference, see:
 
 http://mitpress.mit.edu/sicp/
 
